@@ -1,0 +1,27 @@
+import osmnx as ox
+import folium
+G = ox.graph_from_bbox(
+    north=10.79,
+    south=10.76,
+    east=106.69,
+    west=106.65,
+    network_type="drive"
+)
+nodes, edges = ox.graph_to_gdfs(G)
+
+num_nodes = len(G.nodes)
+num_edges = len(G.edges)
+
+total_length = sum(data["length"] for u, v, data in G.edges(data=True))
+avg_length = total_length / num_edges
+density = num_edges / num_nodes
+
+m = folium.Map(location=[10.775,106.67], zoom_start=14)
+folium.GeoJson(edges).add_to(m)
+
+print("Số nút (giao điểm):", num_nodes)
+print("Số cạnh (đường):", num_edges)
+print("Tổng chiều dài (m):", round(total_length,2))
+print("Chiều dài TB (m):", round(avg_length,2))
+print("Mật độ mạng:", round(density,2))
+m
