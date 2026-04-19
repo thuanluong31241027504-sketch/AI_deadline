@@ -1,0 +1,80 @@
+import folium
+import math
+
+warehouse = [10.7725, 106.6670]
+
+customers = [
+    [10.7735, 106.6665],[10.7710, 106.6685],[10.7800, 106.7000], [10.8000, 106.7100], [10.8500, 106.7500],
+]
+
+def distance(a, b):
+    R = 6371  
+    lat1, lon1 = math.radians(a[0]), math.radians(a[1])
+    lat2, lon2 = math.radians(b[0]), math.radians(b[1])
+
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+
+    h = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
+    return 2 * R * math.asin(math.sqrt(h))
+
+def evaluate(d):
+    if d <= 3:
+        return "Rất tốt", "green"
+    elif d <= 5:
+        return "Tốt", "blue"
+    elif d <= 10:
+        return "Trung bình", "orange"
+    else:
+        return "Kém", "red"
+
+m = folium.Map(location=warehouse, zoom_start=13)
+
+folium.Marker(
+    warehouse,
+    popup="Kho hàng (Quận 10)",
+    icon=folium.Icon(color="red", icon="home")
+).add_to(m)
+
+zones = [
+    (3000, "3 km", "green"),
+    (5000, "5 km", "blue"),
+    (10000, "10 km", "purple")
+]
+
+for r, label, color in zones:
+    folium.Circle(
+        location=warehouse,
+        radius=r,
+        color=color,
+        fill=False,
+        weight=3,
+        popup=label
+    ).add_to(m)
+
+count = {"Rất tốt":0, "Tốt":0, "Trung bình":0, "Kém":0}
+
+for c in customers:
+    d = distance(warehouse, c)
+    level, color = evaluate(d)
+    count[level] += 1
+
+    folium.Marker(
+        c,
+        popup=f"Khách hàng<br>{d:.2f} km<br>{level}",
+        icon=folium.Icon(color=color)
+    ).add_to(m)
+
+total = len(customers)
+good = count["Rất tốt"] + count["Tốt"]
+
+if good / total >= 0.6:
+    optimal = "Phạm vi tối ưu: 5 km"
+else:
+    optimal = "Phạm vi tối ưu: 10 km"
+
+for k, v in count.items():
+    print(f"{k}: {v} khách")
+
+print(optimal)
+m
