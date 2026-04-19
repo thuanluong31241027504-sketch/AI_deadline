@@ -1,0 +1,45 @@
+import folium
+import random
+import numpy as np
+from sklearn.cluster import KMeans
+
+customers = []
+for _ in range(80):
+    lat = 10.75 + random.uniform(-0.1, 0.1)
+    lon = 106.67 + random.uniform(-0.1, 0.1)
+    customers.append([lat, lon])
+
+X = np.array(customers)
+
+k = 3  
+kmeans = KMeans(n_clusters=k, random_state=0)
+labels = kmeans.fit_predict(X)
+centers = kmeans.cluster_centers_
+
+m = folium.Map(location=[10.77, 106.68], zoom_start=12)
+
+colors = ['red', 'blue', 'green', 'purple', 'orange']
+
+for i, point in enumerate(customers):
+    cluster_id = labels[i]
+    folium.CircleMarker(
+        location=point,
+        radius=5,
+        color=colors[cluster_id],
+        fill=True,
+        fill_opacity=0.7,
+        popup=f"Khách hàng - Cụm {cluster_id}"
+    ).add_to(m)
+
+for i, center in enumerate(centers):
+    folium.Marker(
+        location=center,
+        popup=f"Kho đề xuất - Cụm {i}",
+        icon=folium.Icon(color=colors[i], icon="home")
+    ).add_to(m)
+
+
+for i, c in enumerate(centers):
+    print(f"Cụm {i} - Tọa độ trung tâm đề xuất = {c}")
+
+m
