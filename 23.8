@@ -1,0 +1,48 @@
+import folium
+import math
+
+khach = [
+    ["Khach A", 10.7674, 106.6782],
+    ["Khach B", 10.7657, 106.6692],
+    ["Khach C", 10.7595, 106.6667],
+]
+
+xe = [
+    ["Xe 1", 10.7700, 106.6700],
+    ["Xe 2", 10.7600, 106.6600],
+]
+
+def dist(lat1, lon1, lat2, lon2):
+    return round(math.sqrt((lat1-lat2)**2 + (lon1-lon2)**2) * 111, 1)
+
+m = folium.Map(location=[10.763, 106.668], zoom_start=14)
+
+for k in khach:
+    folium.Marker([k[1], k[2]], popup=k[0], icon=folium.Icon(color='red', icon='user', prefix='fa')).add_to(m)
+
+
+for x in xe:
+    folium.Marker([x[1], x[2]], popup=x[0], icon=folium.Icon(color='green', icon='car', prefix='fa')).add_to(m)
+
+cac_cap = []
+for k in khach:
+    for x in xe:
+        d = dist(k[1], k[2], x[1], x[2])
+        cac_cap.append((k[0], x[0], d, k[1], k[2], x[1], x[2]))
+
+cac_cap.sort(key=lambda t: t[2])
+
+xe_da = set()
+khach_da = set()
+for t in cac_cap:
+    if t[1] not in xe_da and t[0] not in khach_da:
+        folium.PolyLine([[t[3], t[4]], [t[5], t[6]]], color='blue', weight=2).add_to(m)
+        print(f"{t[0]} -> {t[1]} | {t[2]} km | {t[2]*2:.0f} phut")
+        xe_da.add(t[1])
+        khach_da.add(t[0])
+
+for k in khach:
+    if k[0] not in khach_da:
+        print(f"{k[0]} khong co xe (cach xe gan nhat {min([dist(k[1],k[2],x[1],x[2]) for x in xe])} km)")
+
+display(m)
