@@ -1,0 +1,154 @@
+import folium
+from branca.element import Element
+import json
+import osmnx as ox
+import networkx as nx
+
+
+khu_vuc = "Quận 10, Thành phố Hồ Chí Minh, Vietnam"
+G = ox.graph_from_place(khu_vuc, network_type='drive')
+
+
+x1_batdau = (10.768566, 106.679209)
+x1_dich = (10.765109, 106.674242)
+
+
+x2_batdau = (10.766153, 106.667397)
+x2_dich = (10.773615, 106.671689)
+
+node1 = ox.distance.nearest_nodes(G, x1_batdau[1], x1_batdau[0])
+node2 = ox.distance.nearest_nodes(G, x1_dich[1], x1_dich[0])
+node3 = ox.distance.nearest_nodes(G, x2_batdau[1], x2_batdau[0])
+node4 = ox.distance.nearest_nodes(G, x2_dich[1], x2_dich[0])
+
+
+duong1_nodes = nx.shortest_path(G, node1, node2, weight='length')
+duong2_nodes = nx.shortest_path(G, node3, node4, weight='length')
+
+duong1 = []
+for node in duong1_nodes:
+    duong1.append([G.nodes[node]['y'], G.nodes[node]['x']])
+
+duong2 = []
+for node in duong2_nodes:
+    duong2.append([G.nodes[node]['y'], G.nodes[node]['x']])
+
+print("THONG TIN DUONG DI")
+print("Xe 1 co", len(duong1), "diem")
+print("Xe 2 co", len(duong2), "diem")
+
+
+m = folium.Map(location=duong1[0], zoom_start=14)
+
+
+code_js = f"""
+<script>
+setTimeout(function() {{
+
+    var map = {m.get_name()};
+    var r1 = {json.dumps(duong1)};
+    var r2 = {json.dumps(duong2)};
+
+    function icon(color) {{
+        return L.divIcon({{
+            html: "<div style='font-size:20px;color:"+color+";'>🚗</div>",
+            className: '',
+            iconSize: [24,24],
+            iconAnchor: [12,12]
+        }});
+    }}
+
+    var car1 = L.marker(r1[0], {{icon:icon('red')}}).addTo(map);
+    var car2 = L.marker(r2[0], {{icon:icon('blue')}}).addTo(map);
+
+    L.marker(r1[r1.length-1]).addTo(map).bindPopup("Diem den xe 1");
+    L.marker(r2[r2.length-1]).addTo(map).bindPopup("Diem den xe 2");
+
+    var done1 = L.polyline([], {{color:'red'}}).addTo(map);
+    var left1 = L.polyline(r1, {{color:'blue'}}).addTo(map);
+    var done2 = L.polyline([], {{color:'red'}}).addTo(map);
+    var left2 = L.polyline(r2, {{color:'blue'}}).addTo(map);
+
+    function tinh_khoang_cach(a,b) {{
+        var R = 6371000;
+        var dLat = (b[0]-a[0])*Math.PI/180;
+        var dLon = (b[1]-a[1])*Math.PI/180;
+        var lat1 = a[0]*Math.PI/180;
+        var lat2 = b[0]*Math.PI/180;
+        var h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+        return 2*R*Math.asin(Math.sqrt(h));
+    }}
+
+    function tong_quang_duong(r) {{
+        var t=0;
+        for(var j=0;j<r.length-1;j++) t += tinh_khoang_cach(r[j],r[j+1]);
+        return t;
+    }}
+
+    var total1 = tong_quang_duong(r1);
+    var total2 = tong_quang_duong(r2);
+    var traveled1 = 0;
+    var traveled2 = 0;
+    var index1 = 0;
+    var index2 = 0;
+    var xe1_xong = false;
+    var xe2_xong = false;
+
+    car1.bindPopup("", {{autoClose:false, closeOnClick:false}}).openPopup();
+    car2.bindPopup("", {{autoClose:false, closeOnClick:false}}).openPopup();
+
+    function di_chuyen() {{
+
+        if(!xe1_xong && index1 < r1.length) {{
+            if(index1 > 0) traveled1 += tinh_khoang_cach(r1[index1-1], r1[index1]);
+            
+            car1.setLatLng(r1[index1]);
+            done1.setLatLngs(r1.slice(0, index1+1));
+            left1.setLatLngs(r1.slice(index1));
+            
+            var con_lai1 = Math.max(0, total1 - traveled1);
+            car1.setPopupContent("Xe 1<br>Con: " + con_lai1.toFixed(0) + " m");
+            
+            index1++;
+            
+      
+            if(index1 >= r1.length) {{
+                xe1_xong = true;
+                car1.setPopupContent("Xe 1 hoàn thành chuyến đi ");
+            }}
+        }}
+        
+
+        if(!xe2_xong && index2 < r2.length) {{
+            if(index2 > 0) traveled2 += tinh_khoang_cach(r2[index2-1], r2[index2]);
+            
+            car2.setLatLng(r2[index2]);
+            done2.setLatLngs(r2.slice(0, index2+1));
+            left2.setLatLngs(r2.slice(index2));
+            
+            var con_lai2 = Math.max(0, total2 - traveled2);
+            car2.setPopupContent("Xe 2<br>Con: " + con_lai2.toFixed(0) + " m");
+            
+            index2++;
+            
+      
+            if(index2 >= r2.length) {{
+                xe2_xong = true;
+                car2.setPopupContent(" Xe 2 hoàn thành chuyến đi ");
+            }}
+        }}
+        
+     
+        if(!xe1_xong || !xe2_xong) {{
+            setTimeout(di_chuyen, 300);
+        }}
+    }}
+
+    di_chuyen();
+
+}},1000);
+</script>
+"""
+
+m.get_root().html.add_child(Element(code_js))
+m
