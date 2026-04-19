@@ -1,0 +1,59 @@
+!pip install folium
+import folium
+from IPython.display import display
+
+ueh = [10.7610, 106.6682]                   
+sanvandong = [10.7607, 106.6633]             
+vanhanhmall = [10.7706, 106.6696]            
+benhvienyduoc = [10.7552, 106.6646]      
+bachkhoa = [10.7733, 106.6597]              
+cayxang = [10.7616, 106.6752]                
+
+
+center = ueh
+m = folium.Map(location=center, zoom_start=14, control_scale=True)
+
+
+folium.Marker(
+    location=ueh,
+    popup="Đại học Kinh tế TP.HCM, 279 Nguyễn Tri Phương, phường Diên Hồng",
+    icon=folium.Icon(color='red', icon='graduation-cap', prefix='fa'),
+    tooltip="UEH - Đại học Kinh tế"
+).add_to(m)
+
+folium.Marker(
+    location=sanvandong,
+    popup=" Sân vận động Thống Nhất, 138 Đào Duy Từ, phường Diên Hồng",
+    icon=folium.Icon(color='orange', icon='futbol', prefix='fa'),
+    tooltip="Sân vận động Thống Nhất"
+).add_to(m)
+
+folium.Marker(
+    location=vanhanhmall,
+    popup="Vạn Hạnh Mall, 11 Sư Vạn Hạnh, Phường Hòa Hưng",
+    icon=folium.Icon(color='blue', icon='shopping-cart', prefix='fa'),
+    tooltip="Vạn Hạnh Mall"
+).add_to(m)
+
+folium.Marker(
+    location=benhvienyduoc,
+    popup="Bệnh viện Đại học Y dược, 215 Hồng Bàng, Phường Chợ Lớn",
+    icon=folium.Icon(color='green', icon='hospital', prefix='fa'),
+    tooltip="Bệnh viện ĐHYD"
+).add_to(m)
+
+folium.Marker(
+    location=bachkhoa,
+    popup=" Trường đại học Bách khoa TP.HCM, 268 Lý Thường Kiệt, Phường Diên Hồng",
+    icon=folium.Icon(color='purple', icon='cogs', prefix='fa'),
+    tooltip="Trường đại học BK"
+).add_to(m)
+
+folium.Marker(
+    location=cayxang,
+    popup="Cây xăng Petrolimex,158 Hùng Vương, Phường Vườn Lài",
+    icon=folium.Icon(color='lightgray', icon='gas-pump', prefix='fa'),
+    tooltip="Cây xăng Petrolimex"
+).add_to(m)
+
+display(m)
