@@ -1,0 +1,62 @@
+!pip install osmnx networkx folium numpy -q
+
+import osmnx as ox
+import networkx as nx
+import folium
+from folium.plugins import MeasureControl
+import time
+import numpy as np
+
+PLACE = "Hoan Kiem, Hanoi, Vietnam"          
+START = "Buu dien Ha Noi, Hoan Kiem, Hanoi"  
+END = "Nha hat Lon, Hoan Kiem, Hanoi"        
+
+G = ox.graph_from_place(PLACE, network_type='walk', simplify=True)
+
+start_pt = ox.geocode(START)
+end_pt = ox.geocode(END)
+start_node = ox.nearest_nodes(G, start_pt[1], start_pt[0])
+end_node = ox.nearest_nodes(G, end_pt[1], end_pt[0])
+
+def heuristic(n1, n2):
+    x1, y1 = G.nodes[n1]['x'], G.nodes[n1]['y']
+    x2, y2 = G.nodes[n2]['x'], G.nodes[n2]['y']
+    return ((x1-x2)**2 + (y1-y2)**2)**0.5
+
+t1 = time.time()
+path_d = nx.dijkstra_path(G, start_node, end_node, weight='length')
+time_d = (time.time() - t1) * 1000
+
+len_d = 0
+for i in range(len(path_d)-1):
+    len_d += G[path_d[i]][path_d[i+1]][0]['length']
+
+t2 = time.time()
+path_a = nx.astar_path(G, start_node, end_node, heuristic=heuristic, weight='length')
+time_a = (time.time() - t2) * 1000
+
+len_a = 0
+for i in range(len(path_a)-1):
+    len_a += G[path_a[i]][path_a[i+1]][0]['length']
+
+print(f"Dijkstra: {len_d:.0f}m, {time_d:.2f}ms")
+print(f"A*: {len_a:.0f}m, {time_a:.2f}ms")
+
+center_lat = (start_pt[0] + end_pt[0]) / 2
+center_lon = (start_pt[1] + end_pt[1]) / 2
+
+m = folium.Map(location=[center_lat, center_lon], zoom_start=16)
+
+coords_d = [[G.nodes[node]['y'], G.nodes[node]['x']] for node in path_d]
+coords_a = [[G.nodes[node]['y'], G.nodes[node]['x']] for node in path_a]
+
+folium.PolyLine(coords_d, color='red', weight=5, opacity=0.8, popup=f'Dijkstra: {len_d:.0f}m').add_to(m)
+folium.PolyLine(coords_a, color='blue', weight=5, opacity=0.8, popup=f'A*: {len_a:.0f}m').add_to(m)
+
+folium.Marker([start_pt[0], start_pt[1]], popup=f'Diem di: {START}', icon=folium.Icon(color='green')).add_to(m)
+folium.Marker([end_pt[0], end_pt[1]], popup=f'Diem den: {END}', icon=folium.Icon(color='red')).add_to(m)
+
+MeasureControl().add_to(m)
+
+m.save('ban_do.html')
+display(m)
